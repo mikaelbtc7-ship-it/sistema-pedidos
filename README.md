@@ -3,6 +3,8 @@
 Controle de pedidos, financeiro e envio para as empresas
 **KYMEX 3D**, **ROSA DOS VENTOS** e **CASAÊ 3D**.
 
+**Site:** https://mikaelbtc7-ship-it.github.io/sistema-pedidos/
+
 Página única, sem servidor. Os dados ficam no navegador e, quando a
 sincronização está configurada, também numa conta Firebase de vocês.
 

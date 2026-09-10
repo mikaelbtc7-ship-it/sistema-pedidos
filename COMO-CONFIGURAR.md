@@ -75,8 +75,11 @@ conteúdo desse arquivo e clique em **Publicar**.
 ## 7. Liberar o endereço do site
 
 No Firebase Console → **Authentication** → **Settings** → **Authorized domains**
-→ **Adicionar domínio** → cole o endereço do seu site
-(algo como `SEU-USUARIO.github.io`).
+→ **Adicionar domínio** → cole:
+
+```
+mikaelbtc7-ship-it.github.io
+```
 
 ---
 
