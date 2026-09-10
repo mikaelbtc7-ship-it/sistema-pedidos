@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema de Pedidos — WhatsApp</title>
+<style>
+  :root{
+    --bg:#0E0D0B; --bg-soft:#17140F; --card:#1D1912; --line:rgba(198,161,91,0.18);
+    --text:#F4EFE4; --muted:#B9AF9C; --gold:#D4AF6A; --gold-dark:#8C6D2F;
+    --green:#5FB980; --red:#E0736B; --blue:#6FA8D4;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.45;font-size:14px}
+  h1,h2,h3{margin:0 0 .4em}
+  a{color:var(--gold)}
+  button{font-family:inherit;font-size:14px;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:14px;background:var(--bg-soft);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+  .btn{background:var(--gold);color:#16130D;border:none;border-radius:8px;padding:9px 16px;font-weight:700}
+  .btn:hover{background:#e3c184}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--gold)}
+  .btn.danger{background:transparent;color:var(--red);border:1px solid rgba(224,115,107,.4)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  header{background:rgba(14,13,11,.85);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;backdrop-filter:blur(8px)}
+  .bar{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{font-weight:800;font-size:17px}
+  .brand span{color:var(--gold)}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{background:transparent;border:none;color:var(--muted);padding:8px 14px;border-radius:8px;font-weight:600}
+  nav button.active{background:var(--card);color:var(--gold)}
+  nav button:hover{color:var(--text)}
+  .spacer{flex:1}
+  main{max-width:1180px;margin:0 auto;padding:22px}
+  .view{display:none}
+  .view.active{display:block}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stat .v{font-size:24px;font-weight:800;margin-top:6px}
+  .stat .v.green{color:var(--green)} .stat .v.red{color:var(--red)} .stat .v.gold{color:var(--gold)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+  .s-novo{background:rgba(111,168,212,.16);color:var(--blue)}
+  .s-producao{background:rgba(212,175,106,.16);color:var(--gold)}
+  .s-pronto{background:rgba(95,185,128,.16);color:var(--green)}
+  .s-entregue{background:rgba(95,185,128,.28);color:#8fe0ab}
+  .s-cancelado{background:rgba(224,115,107,.16);color:var(--red)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+  .toolbar>div{min-width:140px}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+  .pill{font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:20px;color:var(--muted)}
+  dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:22px;max-width:560px;width:92vw}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .empresa-sel{display:flex;align-items:center;gap:8px}
+  .empresa-sel select{width:auto;min-width:150px}
+  .empty{text-align:center;color:var(--muted);padding:40px 0}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+  @keyframes waFlash{from{background:rgba(212,175,106,.4)}to{background:var(--bg-soft)}}
+  .wa-flash{animation:waFlash 1.8s ease-out}
+  #waText{resize:vertical}
+  #waPanel{border-color:rgba(198,161,91,.4)}
+  #syncBadge{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  #syncBadge.ok{color:var(--green);border-color:rgba(95,185,128,.4)}
+  #syncBadge.warn{color:var(--red);border-color:rgba(224,115,107,.4)}
+  #loginGate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+  #loginGate .box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px;max-width:360px;width:100%}
+</style>
+</head>
+<body>
+<div id="loginGate" hidden>
+  <div class="box">
+    <div class="brand" style="font-size:20px;margin-bottom:4px">Pedidos<span>.</span></div>
+    <p class="muted" style="margin-top:0">Entre com seu e-mail e senha para ver os pedidos.</p>
+    <form id="loginForm">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" required autocomplete="username">
+      <label style="margin-top:10px">Senha</label>
+      <input type="password" id="loginSenha" required autocomplete="current-password">
+      <button class="btn" type="submit" style="width:100%;margin-top:16px">Entrar</button>
+      <p id="loginErro" style="color:var(--red);font-size:13px;margin:12px 0 0" hidden></p>
+    </form>
+    <p style="margin:16px 0 0;font-size:12px"><a href="#" id="loginPular" class="muted">Usar só neste aparelho (sem sincronizar)</a></p>
+  </div>
+</div>
+<header>
+  <div class="bar">
+    <div class="brand">Pedidos<span>.</span></div>
+    <nav>
+      <button data-view="dashboard" class="active">Painel</button>
+      <button data-view="pedidos">Pedidos</button>
+      <button data-view="financeiro">Financeiro</button>
+      <button data-view="envio">Envio</button>
+      <button data-view="backup">Backup</button>
+    </nav>
+    <div class="spacer"></div>
+    <span id="syncBadge">somente neste aparelho</span>
+    <button class="btn ghost sm" id="btnSair" hidden>Sair</button>
+    <div class="empresa-sel">
+      <label style="margin:0">Empresa</label>
+      <select id="empresaFiltro"></select>
+      <button class="btn ghost sm" id="gerenciarEmpresas">Gerenciar</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== PAINEL ===================== -->
+  <section class="view active" id="view-dashboard">
+    <div class="toolbar">
+      <div>
+        <label>Período</label>
+        <select id="dashPeriodo">
+          <option value="mes">Este mês</option>
+          <option value="mespassado">Mês passado</option>
+          <option value="ano">Este ano</option>
+          <option value="tudo">Tudo</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards" id="dashCards"></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Pedidos por status</h3>
+        <div id="dashStatus"></div>
+      </div>
+      <div class="panel">
+        <h3>Últimos pedidos</h3>
+        <div id="dashRecentes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PEDIDOS ===================== -->
+  <section class="view" id="view-pedidos">
+    <div class="panel" id="waPanel">
+      <h3>Colar do WhatsApp <span class="pill">rápido</span></h3>
+      <p class="muted" style="margin-top:0">Copie a conversa no WhatsApp (ou só a mensagem da cliente) e cole aqui. O sistema tenta preencher o pedido sozinho — depois é só conferir e salvar. Nada sai deste computador.</p>
+      <textarea id="waText" rows="4" placeholder="Ex:&#10;Ana Paula: Oi! Queria 2 vasos geométricos preto e 1 luminária lua 15cm&#10;Meu zap é (11) 98888-7777&#10;Fica R$ 180 no pix, pode entregar sexta?"></textarea>
+      <div class="row-actions" style="margin-top:10px">
+        <button type="button" class="btn" id="waAnalisar">Analisar e preencher</button>
+        <button type="button" class="btn ghost" id="waLimpar">Limpar</button>
+      </div>
+      <p class="muted" id="waResultado" style="margin-top:10px" hidden></p>
+    </div>
+    <div class="panel">
+      <h3 id="pedidoFormTitulo">Novo pedido</h3>
+      <form id="pedidoForm">
+        <input type="hidden" id="pedidoId">
+        <div style="margin-bottom:12px;max-width:420px">
+          <label>Empresa deste pedido *</label>
+          <select id="p_empresa" required></select>
+        </div>
+        <div class="grid3">
+          <div><label>Cliente *</label><input id="p_cliente" required></div>
+          <div><label>Telefone / WhatsApp</label><input id="p_telefone" placeholder="(00) 00000-0000"></div>
+          <div><label>Data do pedido *</label><input type="date" id="p_data" required></div>
+        </div>
+        <div style="margin-top:12px"><label>Itens / descrição *</label><textarea id="p_itens" rows="2" required placeholder="Ex: 2x Vaso geométrico preto, 1x Luminária lua 15cm"></textarea></div>
+        <div class="grid3" style="margin-top:12px">
+          <div><label>Valor total (R$) *</label><input type="number" step="0.01" min="0" id="p_valor" required></div>
+          <div>
+            <label>Forma de pagamento</label>
+            <select id="p_pgto"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option><option>Outro</option></select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="p_status">
+              <option value="novo">Novo</option>
+              <option value="producao">Em produção</option>
+              <option value="pronto">Pronto</option>
+              <option value="entregue">Entregue</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid3" style="margin-top:12px">
+          <div><label>Pago?</label><select id="p_pago"><option value="nao">Não</option><option value="sim">Sim</option></select></div>
+          <div><label>Data de entrega prevista</label><input type="date" id="p_entrega"></div>
+          <div><label>Canal</label><input id="p_canal" value="WhatsApp"></div>
+        </div>
+        <div style="margin-top:12px"><label>Observações</label><input id="p_obs"></div>
+
+        <details id="envioBloco" style="margin-top:16px;border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+          <summary style="cursor:pointer;font-weight:700;color:var(--gold)">Endereço e pacote (para envio / etiqueta)</summary>
+          <div class="grid3" style="margin-top:12px">
+            <div>
+              <label>CEP</label>
+              <div style="display:flex;gap:6px">
+                <input id="p_cep" placeholder="00000-000" inputmode="numeric">
+                <button type="button" class="btn ghost sm" id="btnBuscarCep" style="white-space:nowrap">Buscar</button>
+              </div>
+            </div>
+            <div style="grid-column:span 2"><label>Rua / logradouro</label><input id="p_rua"></div>
+          </div>
+          <div class="grid3" style="margin-top:12px">
+            <div><label>Número</label><input id="p_numero"></div>
+            <div><label>Complemento</label><input id="p_compl" placeholder="apto, bloco, fundos..."></div>
+            <div><label>Bairro</label><input id="p_bairro"></div>
+          </div>
+          <div class="grid3" style="margin-top:12px">
+            <div style="grid-column:span 2"><label>Cidade</label><input id="p_cidade"></div>
+            <div><label>UF</label><input id="p_uf" maxlength="2" style="text-transform:uppercase"></div>
+          </div>
+          <div class="grid2" style="margin-top:12px">
+            <div><label>CPF/CNPJ do destinatário (Melhor Envio pede)</label><input id="p_doc" placeholder="000.000.000-00"></div>
+            <div><label>E-mail do destinatário (opcional)</label><input id="p_email" type="email"></div>
+          </div>
+          <p class="muted" style="margin:14px 0 4px">Pacote — se deixar em branco, usa o padrão definido na aba <b>Envio</b>.</p>
+          <div class="grid3">
+            <div><label>Peso (kg)</label><input id="p_peso" type="text" inputmode="decimal" placeholder="0,3"></div>
+            <div><label>Comprimento (cm)</label><input id="p_comp" type="number" step="1" min="0"></div>
+            <div><label>Largura (cm)</label><input id="p_larg" type="number" step="1" min="0"></div>
+          </div>
+          <div class="grid3" style="margin-top:12px">
+            <div><label>Altura (cm)</label><input id="p_alt" type="number" step="1" min="0"></div>
+          </div>
+        </details>
+
+        <div class="modal-actions" style="justify-content:flex-start">
+          <button type="submit" class="btn">Salvar pedido</button>
+          <button type="button" class="btn ghost" id="pedidoCancelar" hidden>Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="toolbar">
+      <div><label>Buscar</label><input id="pedBusca" placeholder="cliente, item, telefone..."></div>
+      <div>
+        <label>Status</label>
+        <select id="pedStatusFiltro">
+          <option value="">Todos</option>
+          <option value="novo">Novo</option>
+          <option value="producao">Em produção</option>
+          <option value="pronto">Pronto</option>
+          <option value="entregue">Entregue</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div>
+        <label>Período</label>
+        <select id="pedPeriodoFiltro">
+          <option value="tudo">Tudo</option>
+          <option value="mes">Este mês</option>
+          <option value="mespassado">Mês passado</option>
+          <option value="ano">Este ano</option>
+        </select>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="exportPedidosCsv">Exportar CSV</button>
+    </div>
+    <div class="panel" style="padding:0;overflow-x:auto">
+      <table id="pedidosTabela">
+        <thead><tr>
+          <th>Data</th><th>Cliente</th><th>Itens</th><th class="right">Valor</th><th>Pgto</th><th>Pago</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="pedidosVazio" hidden>Nenhum pedido ainda. Cadastre o primeiro acima.</div>
+    </div>
+  </section>
+
+  <!-- ===================== FINANCEIRO ===================== -->
+  <section class="view" id="view-financeiro">
+    <div class="toolbar">
+      <div>
+        <label>Período</label>
+        <select id="finPeriodo">
+          <option value="mes">Este mês</option>
+          <option value="mespassado">Mês passado</option>
+          <option value="ano">Este ano</option>
+          <option value="tudo">Tudo</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards" id="finCards"></div>
+
+    <div class="panel">
+      <h3>Lançar entrada / saída manual</h3>
+      <p class="muted" style="margin-top:0">As entradas dos pedidos são calculadas automaticamente. Use aqui para despesas (filamento, energia, embalagem, taxas...) ou receitas que não são pedidos.</p>
+      <form id="lancForm">
+        <input type="hidden" id="lancId">
+        <div class="grid3">
+          <div><label>Tipo *</label><select id="l_tipo"><option value="saida">Saída (despesa)</option><option value="entrada">Entrada (receita)</option></select></div>
+          <div><label>Data *</label><input type="date" id="l_data" required></div>
+          <div><label>Valor (R$) *</label><input type="number" step="0.01" min="0" id="l_valor" required></div>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div><label>Categoria</label><input id="l_categoria" placeholder="Material, Energia, Marketing, Embalagem..." list="catList"></div>
+          <div><label>Descrição *</label><input id="l_desc" required></div>
+        </div>
+        <datalist id="catList">
+          <option>Material / Filamento</option><option>Energia</option><option>Embalagem</option>
+          <option>Marketing</option><option>Taxas / Maquininha</option><option>Frete</option>
+          <option>Equipamento</option><option>Impostos</option><option>Pró-labore</option><option>Outro</option>
+        </datalist>
+        <div class="modal-actions" style="justify-content:flex-start">
+          <button type="submit" class="btn">Salvar lançamento</button>
+          <button type="button" class="btn ghost" id="lancCancelar" hidden>Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="grid2">
+      <div class="panel" style="padding:0">
+        <h3 style="padding:16px 18px 0">Lançamentos manuais</h3>
+        <div style="overflow-x:auto">
+        <table id="lancTabela">
+          <thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th class="right">Valor</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        </div>
+        <div class="empty" id="lancVazio" hidden>Nenhum lançamento manual.</div>
+      </div>
+      <div class="panel" style="padding:0">
+        <h3 style="padding:16px 18px 0">Recebimentos de pedidos <span class="pill">automático</span></h3>
+        <div style="overflow-x:auto">
+        <table id="finPedidosTabela">
+          <thead><tr><th>Data</th><th>Cliente</th><th>Status</th><th>Pago</th><th class="right">Valor</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ENVIO ===================== -->
+  <section class="view" id="view-envio">
+    <div class="panel">
+      <h3>Como funciona</h3>
+      <p class="muted" style="margin-top:0">
+        Este sistema <b>não emite a etiqueta oficial</b> (com rastreio e frete pago) — isso só o Melhor Envio faz.
+        Aqui você: (1) imprime uma <b>etiqueta de endereço</b> para colar na caixa, e (2) <b>copia os dados</b> de cada envio
+        para colar rápido ao adicionar o envio no painel do Melhor Envio. Preencha o endereço na aba <b>Pedidos</b>, dentro de cada pedido.
+      </p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h3>Dados do remetente <span class="pill" id="remEmpresaNome"></span></h3>
+        <p class="muted" style="margin-top:0">Aparece na etiqueta como "DE". Salvo por empresa.</p>
+        <form id="remForm">
+          <div class="grid2">
+            <div><label>Nome / empresa</label><input id="r_nome"></div>
+            <div><label>Telefone</label><input id="r_tel"></div>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <div><label>CEP</label><input id="r_cep" placeholder="00000-000"></div>
+            <div style="grid-column:span 2"><label>Rua</label><input id="r_rua"></div>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <div><label>Número</label><input id="r_numero"></div>
+            <div><label>Complemento</label><input id="r_compl"></div>
+            <div><label>Bairro</label><input id="r_bairro"></div>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <div style="grid-column:span 2"><label>Cidade</label><input id="r_cidade"></div>
+            <div><label>UF</label><input id="r_uf" maxlength="2" style="text-transform:uppercase"></div>
+          </div>
+          <div style="margin-top:10px"><label>CPF/CNPJ</label><input id="r_doc"></div>
+          <div class="modal-actions" style="justify-content:flex-start"><button class="btn" type="submit">Salvar remetente</button></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Pacote padrão</h3>
+        <p class="muted" style="margin-top:0">Usado quando o pedido não tem medidas próprias. Salvo para todas as empresas.</p>
+        <form id="pacoteForm">
+          <div class="grid2">
+            <div><label>Peso (kg)</label><input id="pk_peso" type="text" inputmode="decimal" placeholder="0,3"></div>
+            <div><label>Comprimento (cm)</label><input id="pk_comp" type="number" step="1" min="0" placeholder="16"></div>
+          </div>
+          <div class="grid2" style="margin-top:10px">
+            <div><label>Largura (cm)</label><input id="pk_larg" type="number" step="1" min="0" placeholder="12"></div>
+            <div><label>Altura (cm)</label><input id="pk_alt" type="number" step="1" min="0" placeholder="8"></div>
+          </div>
+          <div class="modal-actions" style="justify-content:flex-start"><button class="btn" type="submit">Salvar pacote padrão</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div>
+        <label>Mostrar</label>
+        <select id="envFiltro">
+          <option value="pendentes">Pedidos a enviar (não entregues)</option>
+          <option value="todos">Todos os pedidos</option>
+          <option value="comendereco">Só com endereço</option>
+        </select>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" id="envExportCsv">Baixar CSV (genérico)</button>
+    </div>
+    <div class="panel" style="padding:0;overflow-x:auto">
+      <table id="envTabela">
+        <thead><tr><th>Data</th><th>Cliente</th><th>Endereço</th><th>Pacote</th><th class="right">Valor</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="envVazio" hidden>Nenhum pedido aqui.</div>
+    </div>
+    <p class="muted" id="envCsvInfo" style="margin-top:10px"></p>
+  </section>
+
+  <!-- ===================== BACKUP ===================== -->
+  <section class="view" id="view-backup">
+    <div class="panel">
+      <h3>Backup e restauração</h3>
+      <p class="muted">Os dados ficam salvos <b>somente neste computador e neste navegador</b>. Faça backup com frequência (ex: toda sexta) e guarde o arquivo no Google Drive ou pen drive.</p>
+      <div class="row-actions" style="margin-top:14px">
+        <button class="btn" id="btnExport">Baixar backup (.json)</button>
+        <button class="btn ghost" id="btnImport">Restaurar de arquivo</button>
+        <input type="file" id="fileImport" accept="application/json" hidden>
+      </div>
+      <p class="muted" id="backupInfo" style="margin-top:14px"></p>
+    </div>
+    <div class="panel">
+      <h3>Zona de risco</h3>
+      <button class="btn danger" id="btnLimpar">Apagar todos os dados</button>
+    </div>
+  </section>
+</main>
+
+<!-- Modal empresas -->
+<dialog id="empresasModal">
+  <h3>Empresas</h3>
+  <div id="empresasLista"></div>
+  <form id="empresaForm" style="display:flex;gap:8px;margin-top:14px">
+    <input id="novaEmpresa" placeholder="Nome da nova empresa" required>
+    <button class="btn" type="submit">Adicionar</button>
+  </form>
+  <div class="modal-actions">
+    <button class="btn ghost" id="empresasFechar">Fechar</button>
+  </div>
+</dialog>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+"use strict";
+const LS_KEY = "sistemaPedidos_v1";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const brl = n => (Number(n)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const todayISO = () => new Date().toISOString().slice(0,10);
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+const STATUS_LABEL = {novo:"Novo",producao:"Em produção",pronto:"Pronto",entregue:"Entregue",cancelado:"Cancelado"};
+const STATUS_CLASS = {novo:"s-novo",producao:"s-producao",pronto:"s-pronto",entregue:"s-entregue",cancelado:"s-cancelado"};
+
+const EMPRESAS_PADRAO = [
+  {id:"kymex", nome:"KYMEX 3D"},
+  {id:"rosadosventos", nome:"ROSA DOS VENTOS"},
+  {id:"casae", nome:"CASAÊ 3D"}
+];
+function normalize(d){
+  d = d || {};
+  d.empresas = (d.empresas && d.empresas.length) ? d.empresas : EMPRESAS_PADRAO.map(e=>({...e}));
+  // primeira abertura (ou base ainda com a empresa genérica e sem pedidos): já cria as 3 empresas
+  if(d.empresas.length===1 && d.empresas[0].id==="default" &&
+     (d.pedidos||[]).length===0 && (d.lancamentos||[]).length===0){
+    d.empresas = EMPRESAS_PADRAO.map(e=>({...e}));
+  }
+  d.pedidos = d.pedidos || [];
+  d.lancamentos = d.lancamentos || [];
+  d.config = d.config || {};
+  d.config.pacote = d.config.pacote || {peso:"",comp:"",larg:"",alt:""};
+  return d;
+}
+function load(){
+  let d = null;
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) d = JSON.parse(raw);
+  }catch(e){}
+  return normalize(d);
+}
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(db)); }
+  catch(e){ alert("Não foi possível salvar. O armazenamento do navegador pode estar cheio ou bloqueado."); }
+  schedulePush();
+}
+
+let db = load();
+
+/* ---------- Período helpers ---------- */
+function inPeriodo(iso, periodo){
+  if(!iso) return periodo==="tudo";
+  if(periodo==="tudo") return true;
+  const d = new Date(iso+"T12:00:00");
+  const now = new Date();
+  if(periodo==="mes") return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  if(periodo==="mespassado"){
+    const m = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    return d.getFullYear()===m.getFullYear() && d.getMonth()===m.getMonth();
+  }
+  if(periodo==="ano") return d.getFullYear()===now.getFullYear();
+  return true;
+}
+
+/* ---------- Empresa atual ---------- */
+function empresaAtual(){ return $("#empresaFiltro").value; }
+function pedidosEmpresa(){
+  const e = empresaAtual();
+  return db.pedidos.filter(p => e==="__all__" ? true : p.empresaId===e);
+}
+function lancamentosEmpresa(){
+  const e = empresaAtual();
+  return db.lancamentos.filter(l => e==="__all__" ? true : l.empresaId===e);
+}
+
+/* ---------- Navegação ---------- */
+$$("nav button").forEach(b=>b.addEventListener("click",()=>{
+  $$("nav button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  $$(".view").forEach(v=>v.classList.remove("active"));
+  $("#view-"+b.dataset.view).classList.add("active");
+  if(b.dataset.view==="envio"){ carregarRemetente(); carregarPacote(); }
+  render();
+}));
+
+/* ---------- Empresas ---------- */
+function renderEmpresaSelect(){
+  const sel = $("#empresaFiltro");
+  const cur = sel.value || "__all__";
+  sel.innerHTML = '<option value="__all__">Todas as empresas</option>' +
+    db.empresas.map(e=>`<option value="${e.id}">${esc(e.nome)}</option>`).join("");
+  sel.value = [...sel.options].some(o=>o.value===cur) ? cur : "__all__";
+
+  const pe = $("#p_empresa");
+  const pcur = pe.value;
+  pe.innerHTML = db.empresas.map(e=>`<option value="${e.id}">${esc(e.nome)}</option>`).join("");
+  pe.value = [...pe.options].some(o=>o.value===pcur) ? pcur
+    : (empresaAtual()!=="__all__" && [...pe.options].some(o=>o.value===empresaAtual()) ? empresaAtual()
+      : (db.empresas[0] ? db.empresas[0].id : ""));
+}
+function renderEmpresasLista(){
+  const box = $("#empresasLista");
+  box.innerHTML = db.empresas.map(e=>{
+    const nP = db.pedidos.filter(p=>p.empresaId===e.id).length;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)">
+      <span style="flex:1">${esc(e.nome)} <span class="muted">(${nP} pedidos)</span></span>
+      <button class="btn ghost sm" data-ren="${e.id}">Renomear</button>
+      <button class="btn danger sm" data-del="${e.id}">Excluir</button>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-ren]").forEach(b=>b.onclick=()=>{
+    const e = db.empresas.find(x=>x.id===b.dataset.ren);
+    const nome = prompt("Novo nome:", e.nome);
+    if(nome && nome.trim()){ e.nome = nome.trim(); save(); renderEmpresaSelect(); renderEmpresasLista(); render(); }
+  });
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    if(db.empresas.length<=1){ alert("Deve existir pelo menos uma empresa."); return; }
+    const id = b.dataset.del;
+    const nP = db.pedidos.filter(p=>p.empresaId===id).length + db.lancamentos.filter(l=>l.empresaId===id).length;
+    if(!confirm(`Excluir esta empresa?${nP?` ${nP} registros ligados a ela também serão apagados.`:""}`)) return;
+    db.empresas = db.empresas.filter(x=>x.id!==id);
+    db.pedidos = db.pedidos.filter(p=>p.empresaId!==id);
+    db.lancamentos = db.lancamentos.filter(l=>l.empresaId!==id);
+    save(); renderEmpresaSelect(); renderEmpresasLista(); render();
+  });
+}
+$("#gerenciarEmpresas").onclick = ()=>{ renderEmpresasLista(); $("#empresasModal").showModal(); };
+$("#empresasFechar").onclick = ()=> $("#empresasModal").close();
+$("#empresaForm").onsubmit = e=>{
+  e.preventDefault();
+  db.empresas.push({id:uid(), nome:$("#novaEmpresa").value.trim()});
+  $("#novaEmpresa").value="";
+  save(); renderEmpresaSelect(); renderEmpresasLista(); render();
+};
+$("#empresaFiltro").onchange = ()=>{ carregarRemetente(); render(); };
+
+/* ---------- Pedidos ---------- */
+const pf = {
+  id:$("#pedidoId"), cliente:$("#p_cliente"), telefone:$("#p_telefone"), data:$("#p_data"),
+  itens:$("#p_itens"), valor:$("#p_valor"), pgto:$("#p_pgto"), status:$("#p_status"),
+  pago:$("#p_pago"), entrega:$("#p_entrega"), canal:$("#p_canal"), obs:$("#p_obs"), empresa:$("#p_empresa"),
+  cep:$("#p_cep"), rua:$("#p_rua"), numero:$("#p_numero"), compl:$("#p_compl"), bairro:$("#p_bairro"),
+  cidade:$("#p_cidade"), uf:$("#p_uf"), doc:$("#p_doc"), email:$("#p_email"),
+  peso:$("#p_peso"), comp:$("#p_comp"), larg:$("#p_larg"), alt:$("#p_alt")
+};
+const PF_ENVIO = ["cep","rua","numero","compl","bairro","cidade","uf","doc","email","peso","comp","larg","alt"];
+function resetPedidoForm(){
+  $("#pedidoForm").reset();
+  pf.id.value=""; pf.data.value=todayISO(); pf.canal.value="WhatsApp";
+  pf.empresa.value = (empresaAtual()!=="__all__" && db.empresas.some(e=>e.id===empresaAtual()))
+    ? empresaAtual() : (db.empresas[0] ? db.empresas[0].id : "");
+  $("#pedidoFormTitulo").textContent="Novo pedido";
+  $("#pedidoCancelar").hidden = true;
+  $("#envioBloco").open = false;
+}
+$("#pedidoCancelar").onclick = resetPedidoForm;
+$("#pedidoForm").onsubmit = e=>{
+  e.preventDefault();
+  const empresaId = pf.empresa.value || (db.empresas[0] && db.empresas[0].id);
+  if(!empresaId){ alert("Cadastre uma empresa antes (botão Gerenciar)."); return; }
+  const obj = {
+    id: pf.id.value || uid(),
+    empresaId,
+    cliente: pf.cliente.value.trim(),
+    telefone: pf.telefone.value.trim(),
+    data: pf.data.value,
+    itens: pf.itens.value.trim(),
+    valor: parseFloat(pf.valor.value)||0,
+    pgto: pf.pgto.value,
+    status: pf.status.value,
+    pago: pf.pago.value,
+    entrega: pf.entrega.value,
+    canal: pf.canal.value.trim(),
+    obs: pf.obs.value.trim()
+  };
+  PF_ENVIO.forEach(k=>{ obj[k] = pf[k].value.trim(); });
+  obj.uf = obj.uf.toUpperCase();
+  if(pf.id.value){
+    const i = db.pedidos.findIndex(p=>p.id===pf.id.value);
+    db.pedidos[i] = obj;
+  } else {
+    db.pedidos.push(obj);
+  }
+  save(); resetPedidoForm(); render();
+};
+function editarPedido(id){
+  const p = db.pedidos.find(x=>x.id===id); if(!p) return;
+  pf.id.value=p.id; pf.cliente.value=p.cliente; pf.telefone.value=p.telefone||"";
+  pf.data.value=p.data; pf.itens.value=p.itens; pf.valor.value=p.valor;
+  pf.pgto.value=p.pgto; pf.status.value=p.status; pf.pago.value=p.pago||"nao";
+  pf.entrega.value=p.entrega||""; pf.canal.value=p.canal||"WhatsApp"; pf.obs.value=p.obs||"";
+  pf.empresa.value = p.empresaId;
+  PF_ENVIO.forEach(k=>{ pf[k].value = p[k]||""; });
+  $("#envioBloco").open = PF_ENVIO.some(k=>p[k]);
+  $("#pedidoFormTitulo").textContent="Editando pedido — "+p.cliente;
+  $("#pedidoCancelar").hidden=false;
+  $("#view-pedidos").scrollIntoView({behavior:"smooth"});
+}
+function excluirPedido(id){
+  if(!confirm("Excluir este pedido?")) return;
+  db.pedidos = db.pedidos.filter(p=>p.id!==id);
+  save(); render();
+}
+function ciclarStatus(id){
+  const ordem = ["novo","producao","pronto","entregue"];
+  const p = db.pedidos.find(x=>x.id===id); if(!p) return;
+  const i = ordem.indexOf(p.status);
+  p.status = i<0 ? "novo" : ordem[(i+1)%ordem.length];
+  if(p.status==="entregue" && p.pago==="nao" && confirm("Marcar como PAGO também?")) p.pago="sim";
+  save(); render();
+}
+
+function renderPedidos(){
+  const tbody = $("#pedidosTabela tbody");
+  const busca = $("#pedBusca").value.toLowerCase().trim();
+  const sf = $("#pedStatusFiltro").value;
+  const perf = $("#pedPeriodoFiltro").value;
+  let list = pedidosEmpresa().slice().sort((a,b)=> (b.data||"").localeCompare(a.data||""));
+  list = list.filter(p=>{
+    if(sf && p.status!==sf) return false;
+    if(!inPeriodo(p.data, perf)) return false;
+    if(busca){
+      const hay = (p.cliente+" "+p.itens+" "+(p.telefone||"")+" "+(p.obs||"")).toLowerCase();
+      if(!hay.includes(busca)) return false;
+    }
+    return true;
+  });
+  $("#pedidosVazio").hidden = list.length>0;
+  tbody.innerHTML = list.map(p=>`
+    <tr>
+      <td>${fmtData(p.data)}${p.entrega?`<br><span class="muted" style="font-size:11px">entrega ${fmtData(p.entrega)}</span>`:""}</td>
+      <td>${esc(p.cliente)}${p.telefone?`<br><span class="muted" style="font-size:11px">${esc(p.telefone)}</span>`:""}${(empresaAtual()==="__all__")?`<br><span class="pill">${esc(empresaNome(p.empresaId))}</span>`:""}</td>
+      <td style="max-width:260px">${esc(p.itens)}${p.obs?`<br><span class="muted" style="font-size:11px">${esc(p.obs)}</span>`:""}</td>
+      <td class="right">${brl(p.valor)}<br><span class="muted" style="font-size:11px">${esc(p.canal||"")}</span></td>
+      <td>${esc(p.pgto)}</td>
+      <td>${p.pago==="sim"?'<span class="tag s-pronto">Pago</span>':'<span class="tag s-cancelado">Em aberto</span>'}</td>
+      <td><button class="tag ${STATUS_CLASS[p.status]}" style="border:none;cursor:pointer" data-ciclar="${p.id}" title="Clique para avançar">${STATUS_LABEL[p.status]}</button></td>
+      <td><div class="row-actions">
+        <button class="btn ghost sm" data-edit="${p.id}">Editar</button>
+        <button class="btn ghost sm" data-etiq="${p.id}">Etiqueta</button>
+        <button class="btn danger sm" data-del="${p.id}">Excluir</button>
+      </div></td>
+    </tr>`).join("");
+  tbody.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editarPedido(b.dataset.edit));
+  tbody.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>excluirPedido(b.dataset.del));
+  tbody.querySelectorAll("[data-ciclar]").forEach(b=>b.onclick=()=>ciclarStatus(b.dataset.ciclar));
+  tbody.querySelectorAll("[data-etiq]").forEach(b=>b.onclick=()=>imprimirEtiqueta(b.dataset.etiq));
+}
+["#pedBusca","#pedStatusFiltro","#pedPeriodoFiltro"].forEach(s=>$(s).addEventListener("input",renderPedidos));
+
+/* ---------- Colar do WhatsApp ---------- */
+const WA_STOP = /^(total|subtotal|valor|pre[çc]o|pix|dinheiro|cart[ãa]o|obs|observa[çc][ãa]o|nome|cliente|telefone|whats|whatsapp|zap|endere[çc]o|entrega|pagamento|frete|data|pedido)$/i;
+
+function waLimpaLinha(line){
+  // [10/09/2026, 14:32:01] Fulana: texto   |   10/09/2026 14:32 - Fulana: texto
+  let m = line.match(/^\[?\d{1,2}\/\d{1,2}\/\d{2,4},?\s*\d{1,2}:\d{2}(?::\d{2})?\s*\]?\s*(?:[-–]\s*)?([^:]{1,40}?):\s?(.*)$/);
+  if(m) return {autor:m[1].trim(), texto:m[2]};
+  // Fulana: texto  (sem hora)
+  m = line.match(/^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'.\s]{1,34}?):\s(.+)$/);
+  if(m && !WA_STOP.test(m[1].trim())) return {autor:m[1].trim(), texto:m[2]};
+  return {autor:null, texto:line};
+}
+
+function parseWhatsApp(raw){
+  const linhas = raw.replace(/\r/g,"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const autores = {}, textos = [];
+  linhas.forEach(l=>{
+    const {autor,texto} = waLimpaLinha(l);
+    if(autor && !/^(voc[êe]|eu|me)$/i.test(autor)) autores[autor] = (autores[autor]||0)+1;
+    textos.push(texto);
+  });
+  const corpo = textos.join("\n").trim();
+  const flat = corpo.replace(/\n/g," ");
+  const low = flat.toLowerCase();
+  const hoje = new Date();
+  const isoAdd = d=>{ const x=new Date(hoje); x.setDate(x.getDate()+d); return x.toISOString().slice(0,10); };
+  const out = {};
+
+  const tel = flat.match(/(?:\+55\s?)?\(?\d{2}\)?[\s.-]?9?\d{4}[\s.-]?\d{4}/);
+  if(tel) out.telefone = tel[0].replace(/\s{2,}/g," ").trim();
+
+  let vals = [...flat.matchAll(/r\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?|\d+(?:,\d{2})?)/gi)].map(x=>x[1]);
+  if(!vals.length) vals = [...flat.matchAll(/\b(\d{1,3}(?:\.\d{3})*,\d{2})\b/g)].map(x=>x[1]);
+  if(!vals.length) vals = [...flat.matchAll(/\b(\d{1,4})\s*(?:reais|real|conto|pila|paus)\b/gi)].map(x=>x[1]);
+  if(!vals.length){
+    const m = flat.match(/(?:total|valor|fica(?:m|ndo)?|sai(?: por)?|custa|pre[çc]o|s[ãa]o|por)\s*(?:em|de|r?\$?)?\s*(\d{1,4}(?:,\d{2})?)\b/i);
+    if(m) vals = [m[1]];
+  }
+  const nums = vals.map(v=>parseFloat(v.replace(/\./g,"").replace(",","."))).filter(n=>n>0);
+  if(nums.length) out.valor = Math.max(...nums);
+
+  const titulo = s => s.replace(/\s+/g," ").trim().replace(/(^|\s)\p{L}/gu, c=>c.toUpperCase());
+  const nm = corpo.match(/(?:nome|cliente)\s*[:\-]\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' ]{1,38})/i);
+  if(nm) out.cliente = titulo(nm[1]);
+  else {
+    const lista = Object.keys(autores).sort((a,b)=>autores[b]-autores[a]);
+    if(lista.length) out.cliente = titulo(lista[0]);
+  }
+
+  if(/\bpix\b/.test(low)) out.pgto = "Pix";
+  else if(/dinheiro|esp[ée]cie/.test(low)) out.pgto = "Dinheiro";
+  else if(/cart[ãa]o|cr[ée]dito|d[ée]bito|maquininha/.test(low)) out.pgto = "Cartão";
+  else if(/transfer[êe]ncia|\bted\b|\bdoc\b/.test(low)) out.pgto = "Transferência";
+
+  if(/j[áa] paguei|^paguei|\bpaguei\b|est[áa] pago|pagamento efetuado|segue.{0,15}comprovante|comprovante.{0,15}(anexo|enviad)/.test(low)) out.pago = "sim";
+
+  if(/\bamanh[ãa]\b/.test(low)) out.entrega = isoAdd(1);
+  else {
+    const dm = flat.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+    if(dm && /entreg|prazo|retir|\bdia\b/.test(low)){
+      const yy = dm[3] ? (dm[3].length===2 ? "20"+dm[3] : dm[3]) : String(hoje.getFullYear());
+      out.entrega = `${yy}-${dm[2].padStart(2,"0")}-${dm[1].padStart(2,"0")}`;
+    } else {
+      const dias = ["domingo","segunda","ter[çc]a","quarta","quinta","sexta","s[áa]bado"];
+      for(let i=0;i<7;i++) if(new RegExp("\\b"+dias[i]).test(low)){ out.entrega = isoAdd(((i-hoje.getDay()+7)%7)||7); break; }
+    }
+  }
+
+  const cep = flat.match(/\b(\d{5})[\s.-]?(\d{3})\b/);
+  if(cep) out.cep = cep[1] + "-" + cep[2];
+  const num = flat.match(/\b(?:n[º°]|n\.|n[uú]mero)\s*:?\s*(\d{1,5})\b/i);
+  if(num) out.numero = num[1];
+
+  out.itens = corpo;
+  return out;
+}
+
+$("#waAnalisar").onclick = ()=>{
+  const raw = $("#waText").value;
+  if(!raw.trim()){ $("#waText").focus(); return; }
+  if(pf.id.value && !confirm("Você está editando um pedido. Analisar vai limpar o formulário e começar um novo. Continuar?")) return;
+
+  const r = parseWhatsApp(raw);
+  resetPedidoForm();
+  let n = 0;
+  const flash = el => { el.classList.remove("wa-flash"); void el.offsetWidth; el.classList.add("wa-flash"); n++; };
+  if(r.cliente){ pf.cliente.value = r.cliente; flash(pf.cliente); }
+  if(r.telefone){ pf.telefone.value = r.telefone; flash(pf.telefone); }
+  if(r.itens){ pf.itens.value = r.itens; flash(pf.itens); }
+  if(r.valor){ pf.valor.value = r.valor; flash(pf.valor); }
+  if(r.pgto){ pf.pgto.value = r.pgto; flash(pf.pgto); }
+  if(r.pago){ pf.pago.value = r.pago; flash(pf.pago); }
+  if(r.entrega){ pf.entrega.value = r.entrega; flash(pf.entrega); }
+  if(r.cep || r.numero){
+    $("#envioBloco").open = true;
+    if(r.cep){ pf.cep.value = r.cep; flash(pf.cep); buscarCep(); }
+    if(r.numero){ pf.numero.value = r.numero; flash(pf.numero); }
+  }
+
+  const falta = [];
+  if(!r.cliente) falta.push("cliente");
+  if(!r.valor) falta.push("valor total");
+  if(!r.itens) falta.push("itens");
+  const msg = $("#waResultado");
+  msg.hidden = false;
+  msg.innerHTML = `Preenchi <b>${n}</b> campo(s) abaixo. ` +
+    (falta.length ? `Ainda falta: <b>${falta.join(", ")}</b>. Complete e ` : `Confira e `) +
+    `clique <b>Salvar pedido</b>.`;
+  pf.cliente.scrollIntoView({behavior:"smooth", block:"center"});
+};
+$("#waLimpar").onclick = ()=>{ $("#waText").value = ""; $("#waResultado").hidden = true; };
+
+/* ---------- Lançamentos ---------- */
+const lf = { id:$("#lancId"), tipo:$("#l_tipo"), data:$("#l_data"), valor:$("#l_valor"), categoria:$("#l_categoria"), desc:$("#l_desc") };
+function resetLancForm(){
+  $("#lancForm").reset(); lf.id.value=""; lf.data.value=todayISO();
+  $("#lancCancelar").hidden=true;
+}
+$("#lancCancelar").onclick = resetLancForm;
+$("#lancForm").onsubmit = e=>{
+  e.preventDefault();
+  const empresaId = lf.id.value
+    ? db.lancamentos.find(l=>l.id===lf.id.value).empresaId
+    : (empresaAtual()==="__all__" ? db.empresas[0].id : empresaAtual());
+  const obj = {
+    id: lf.id.value || uid(), empresaId,
+    tipo: lf.tipo.value, data: lf.data.value,
+    valor: parseFloat(lf.valor.value)||0,
+    categoria: lf.categoria.value.trim(), desc: lf.desc.value.trim()
+  };
+  if(lf.id.value){ const i=db.lancamentos.findIndex(l=>l.id===lf.id.value); db.lancamentos[i]=obj; }
+  else db.lancamentos.push(obj);
+  save(); resetLancForm(); render();
+};
+function editarLanc(id){
+  const l = db.lancamentos.find(x=>x.id===id); if(!l) return;
+  lf.id.value=l.id; lf.tipo.value=l.tipo; lf.data.value=l.data; lf.valor.value=l.valor;
+  lf.categoria.value=l.categoria||""; lf.desc.value=l.desc||"";
+  $("#lancCancelar").hidden=false;
+  $("#view-financeiro").scrollIntoView({behavior:"smooth"});
+}
+function excluirLanc(id){
+  if(!confirm("Excluir este lançamento?")) return;
+  db.lancamentos = db.lancamentos.filter(l=>l.id!==id);
+  save(); render();
+}
+
+function renderFinanceiro(){
+  const per = $("#finPeriodo").value;
+  const peds = pedidosEmpresa().filter(p=>p.status!=="cancelado" && inPeriodo(p.data,per));
+  const lancs = lancamentosEmpresa().filter(l=>inPeriodo(l.data,per));
+
+  const faturado = peds.reduce((s,p)=>s+p.valor,0);
+  const recebido = peds.filter(p=>p.pago==="sim").reduce((s,p)=>s+p.valor,0)
+                 + lancs.filter(l=>l.tipo==="entrada").reduce((s,l)=>s+l.valor,0);
+  const aReceber = peds.filter(p=>p.pago!=="sim").reduce((s,p)=>s+p.valor,0);
+  const despesas = lancs.filter(l=>l.tipo==="saida").reduce((s,l)=>s+l.valor,0);
+  const lucro = recebido - despesas;
+
+  $("#finCards").innerHTML = `
+    ${stat("Faturado no período", brl(faturado), "gold")}
+    ${stat("Recebido (caixa)", brl(recebido), "green")}
+    ${stat("A receber", brl(aReceber), "")}
+    ${stat("Despesas", brl(despesas), "red")}
+    ${stat("Resultado (recebido − despesas)", brl(lucro), lucro>=0?"green":"red")}
+  `;
+
+  const lb = $("#lancTabela tbody");
+  const ll = lancs.slice().sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  $("#lancVazio").hidden = ll.length>0;
+  lb.innerHTML = ll.map(l=>`
+    <tr>
+      <td>${fmtData(l.data)}</td>
+      <td>${l.tipo==="entrada"?'<span class="tag s-pronto">Entrada</span>':'<span class="tag s-cancelado">Saída</span>'}</td>
+      <td>${esc(l.categoria||"—")}</td>
+      <td>${esc(l.desc)}</td>
+      <td class="right" style="color:${l.tipo==="entrada"?"var(--green)":"var(--red)"}">${l.tipo==="entrada"?"+":"−"}${brl(l.valor)}</td>
+      <td><div class="row-actions">
+        <button class="btn ghost sm" data-edl="${l.id}">Editar</button>
+        <button class="btn danger sm" data-dll="${l.id}">Excluir</button>
+      </div></td>
+    </tr>`).join("");
+  lb.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>editarLanc(b.dataset.edl));
+  lb.querySelectorAll("[data-dll]").forEach(b=>b.onclick=()=>excluirLanc(b.dataset.dll));
+
+  const fb = $("#finPedidosTabela tbody");
+  fb.innerHTML = peds.slice().sort((a,b)=>(b.data||"").localeCompare(a.data||"")).map(p=>`
+    <tr>
+      <td>${fmtData(p.data)}</td>
+      <td>${esc(p.cliente)}</td>
+      <td><span class="tag ${STATUS_CLASS[p.status]}">${STATUS_LABEL[p.status]}</span></td>
+      <td>${p.pago==="sim"?'<span class="tag s-pronto">Pago</span>':'<span class="muted">aberto</span>'}</td>
+      <td class="right">${brl(p.valor)}</td>
+    </tr>`).join("") || `<tr><td colspan="5" class="muted" style="padding:20px;text-align:center">Nenhum pedido no período.</td></tr>`;
+}
+$("#finPeriodo").addEventListener("change",renderFinanceiro);
+
+/* ---------- Painel ---------- */
+function renderDashboard(){
+  const per = $("#dashPeriodo").value;
+  const peds = pedidosEmpresa().filter(p=>inPeriodo(p.data,per));
+  const ativos = peds.filter(p=>p.status!=="cancelado");
+  const lancs = lancamentosEmpresa().filter(l=>inPeriodo(l.data,per));
+
+  const faturado = ativos.reduce((s,p)=>s+p.valor,0);
+  const recebido = ativos.filter(p=>p.pago==="sim").reduce((s,p)=>s+p.valor,0)
+                 + lancs.filter(l=>l.tipo==="entrada").reduce((s,l)=>s+l.valor,0);
+  const despesas = lancs.filter(l=>l.tipo==="saida").reduce((s,l)=>s+l.valor,0);
+  const aReceber = ativos.filter(p=>p.pago!=="sim").reduce((s,p)=>s+p.valor,0);
+  const ticket = ativos.length ? faturado/ativos.length : 0;
+
+  $("#dashCards").innerHTML = `
+    ${stat("Pedidos no período", ativos.length, "gold")}
+    ${stat("Faturado", brl(faturado), "gold")}
+    ${stat("Recebido", brl(recebido), "green")}
+    ${stat("A receber", brl(aReceber), "")}
+    ${stat("Despesas", brl(despesas), "red")}
+    ${stat("Resultado", brl(recebido-despesas), (recebido-despesas)>=0?"green":"red")}
+    ${stat("Ticket médio", brl(ticket), "")}
+  `;
+
+  const counts = {};
+  Object.keys(STATUS_LABEL).forEach(k=>counts[k]=0);
+  peds.forEach(p=>counts[p.status]=(counts[p.status]||0)+1);
+  $("#dashStatus").innerHTML = Object.keys(STATUS_LABEL).map(k=>{
+    const n = counts[k]||0;
+    const pct = peds.length ? Math.round(n/peds.length*100) : 0;
+    return `<div style="margin:8px 0">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span><span class="tag ${STATUS_CLASS[k]}">${STATUS_LABEL[k]}</span></span><span class="muted">${n} (${pct}%)</span>
+      </div>
+      <div style="height:6px;background:var(--bg-soft);border-radius:6px;margin-top:5px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--gold)"></div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const rec = peds.slice().sort((a,b)=>(b.data||"").localeCompare(a.data||"")).slice(0,8);
+  $("#dashRecentes").innerHTML = rec.length ? `<table><tbody>${rec.map(p=>`
+    <tr>
+      <td>${fmtData(p.data)}</td>
+      <td>${esc(p.cliente)}</td>
+      <td><span class="tag ${STATUS_CLASS[p.status]}">${STATUS_LABEL[p.status]}</span></td>
+      <td class="right">${brl(p.valor)}</td>
+    </tr>`).join("")}</tbody></table>` : '<div class="empty">Sem pedidos no período.</div>';
+}
+$("#dashPeriodo").addEventListener("change",renderDashboard);
+
+/* ---------- Backup ---------- */
+$("#btnExport").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-pedidos-${todayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$("#btnImport").onclick = ()=> $("#fileImport").click();
+$("#fileImport").onchange = e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const data = JSON.parse(r.result);
+      if(!data.pedidos || !data.empresas) throw new Error("formato");
+      if(!confirm("Isto substitui TODOS os dados atuais pelos do arquivo. Continuar?")) return;
+      db = normalize(data); save(); renderEmpresaSelect(); render();
+      alert("Backup restaurado com sucesso.");
+    }catch(err){ alert("Arquivo inválido."); }
+  };
+  r.readAsText(file);
+  e.target.value="";
+};
+$("#btnLimpar").onclick = ()=>{
+  if(!confirm("Apagar TODOS os dados deste sistema? Faça um backup antes.")) return;
+  if(!confirm("Tem certeza absoluta? Não dá para desfazer.")) return;
+  db = normalize(null);
+  save(); renderEmpresaSelect(); render();
+};
+
+$("#exportPedidosCsv").onclick = ()=>{
+  const rows = [["Data","Empresa","Cliente","Telefone","Itens","Valor","Pagamento","Pago","Status","Entrega","Canal","Obs"]];
+  pedidosEmpresa().slice().sort((a,b)=>(a.data||"").localeCompare(b.data||"")).forEach(p=>{
+    rows.push([p.data,empresaNome(p.empresaId),p.cliente,p.telefone||"",p.itens,String(p.valor).replace(".",","),p.pgto,p.pago==="sim"?"Sim":"Não",STATUS_LABEL[p.status],p.entrega||"",p.canal||"",p.obs||""]);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `pedidos-${todayISO()}.csv`; a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---------- Envio / etiquetas ---------- */
+const CEP_CACHE = {};
+async function buscarCep(){
+  const cep = pf.cep.value.replace(/\D/g,"");
+  if(cep.length!==8) return;
+  const btn = $("#btnBuscarCep"); const t0 = btn.textContent; btn.textContent = "..."; btn.disabled = true;
+  try{
+    let d = CEP_CACHE[cep];
+    if(!d){ d = await (await fetch("https://viacep.com.br/ws/"+cep+"/json/")).json(); CEP_CACHE[cep] = d; }
+    if(d && !d.erro){
+      if(d.logradouro) pf.rua.value = d.logradouro;
+      if(d.bairro) pf.bairro.value = d.bairro;
+      if(d.localidade) pf.cidade.value = d.localidade;
+      if(d.uf) pf.uf.value = d.uf;
+      pf.cep.value = cep.slice(0,5) + "-" + cep.slice(5);
+      if(!pf.numero.value) pf.numero.focus();
+    } else {
+      flashMsg("CEP não encontrado — preencha o endereço à mão.");
+    }
+  }catch(e){
+    flashMsg("Sem internet para buscar o CEP — preencha o endereço à mão.");
+  }finally{ btn.textContent = t0; btn.disabled = false; }
+}
+$("#btnBuscarCep").onclick = buscarCep;
+pf.cep.addEventListener("blur", ()=>{ if(pf.cep.value.replace(/\D/g,"").length===8 && !pf.rua.value) buscarCep(); });
+
+const rf = {nome:$("#r_nome"),tel:$("#r_tel"),cep:$("#r_cep"),rua:$("#r_rua"),numero:$("#r_numero"),compl:$("#r_compl"),bairro:$("#r_bairro"),cidade:$("#r_cidade"),uf:$("#r_uf"),doc:$("#r_doc")};
+const RF_KEYS = Object.keys(rf);
+function empresaParaRemetente(){
+  const e = empresaAtual();
+  return (e==="__all__" ? db.empresas[0] : db.empresas.find(x=>x.id===e)) || db.empresas[0];
+}
+function carregarRemetente(){
+  const emp = empresaParaRemetente();
+  const r = (emp && emp.remetente) || {};
+  RF_KEYS.forEach(k=> rf[k].value = r[k]||"");
+  $("#remEmpresaNome").textContent = emp ? emp.nome : "";
+}
+function carregarPacote(){ Object.keys(kf).forEach(k=> kf[k].value = db.config.pacote[k]||""); }
+const kf = {peso:$("#pk_peso"),comp:$("#pk_comp"),larg:$("#pk_larg"),alt:$("#pk_alt")};
+$("#remForm").onsubmit = e=>{
+  e.preventDefault();
+  const emp = empresaParaRemetente();
+  emp.remetente = {}; RF_KEYS.forEach(k=> emp.remetente[k] = rf[k].value.trim());
+  emp.remetente.uf = emp.remetente.uf.toUpperCase();
+  save(); flashMsg("Remetente salvo para "+emp.nome+".");
+};
+$("#pacoteForm").onsubmit = e=>{
+  e.preventDefault();
+  Object.keys(kf).forEach(k=> db.config.pacote[k] = kf[k].value.trim());
+  save(); flashMsg("Pacote padrão salvo."); renderEnvio();
+};
+
+function pacoteDoPedido(p){
+  const c = db.config.pacote || {};
+  return { peso:p.peso||c.peso||"", comp:p.comp||c.comp||"", larg:p.larg||c.larg||"", alt:p.alt||c.alt||"" };
+}
+function temEndereco(p){ return !!(p.cep && p.rua && p.numero && p.cidade && p.uf); }
+function enderecoLinha(p){
+  const l1 = [p.rua, p.numero].filter(Boolean).join(", ");
+  const l2 = [p.bairro, [p.cidade, p.uf].filter(Boolean).join("/")].filter(Boolean).join(" - ");
+  return [l1, p.compl, l2, p.cep].filter(Boolean).join(" · ");
+}
+
+let toastT;
+function flashMsg(m){
+  let t = $("#toast");
+  if(!t){
+    t = document.createElement("div"); t.id = "toast";
+    t.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:8px;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.45);max-width:90vw;font-size:13px";
+    document.body.appendChild(t);
+  }
+  t.textContent = m; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(()=>{ t.hidden = true; }, 4000);
+}
+
+function imprimirEtiqueta(id){
+  const p = db.pedidos.find(x=>x.id===id); if(!p) return;
+  const emp = db.empresas.find(x=>x.id===p.empresaId) || {};
+  const rem = emp.remetente || {};
+  const pk = pacoteDoPedido(p);
+  const bloco = (nome, o) => [
+    [o.rua,o.numero].filter(Boolean).join(", "),
+    o.compl,
+    [o.bairro,[o.cidade,o.uf].filter(Boolean).join("/")].filter(Boolean).join(" - "),
+    o.cep ? ("CEP "+o.cep) : ""
+  ].filter(Boolean).join("<br>");
+  const pkTxt = [pk.peso?pk.peso+" kg":"", (pk.comp&&pk.larg&&pk.alt)?`${pk.comp}×${pk.larg}×${pk.alt} cm`:""].filter(Boolean).join(" · ");
+  const w = window.open("", "_blank", "width=520,height=460");
+  if(!w){ flashMsg("Libere pop-ups deste site para imprimir a etiqueta."); return; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiqueta ${esc(p.cliente)}</title>
+  <style>
+    @page{size:100mm 150mm;margin:4mm}
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;color:#000;background:#fff}
+    .et{width:92mm;border:1.5px solid #000;padding:5mm}
+    .lbl{font-size:9pt;text-transform:uppercase;letter-spacing:.5px;font-weight:bold;margin:0 0 1mm}
+    .box{border:1px solid #000;padding:3mm;margin-bottom:3.5mm}
+    .nome{font-size:13pt;font-weight:bold;margin-bottom:1mm}
+    .end{font-size:10.5pt;line-height:1.35}
+    .rem .nome{font-size:10.5pt}.rem .end{font-size:9pt}
+    .foot{font-size:8.5pt;border-top:1px dashed #000;padding-top:2mm;line-height:1.4}
+    .btns{margin-top:8mm;text-align:center}
+    button{font-size:12pt;padding:7px 20px;margin:0 4px;cursor:pointer}
+    @media print{.btns{display:none}}
+  </style></head><body>
+  <div class="et">
+    <p class="lbl">Destinatário</p>
+    <div class="box">
+      <div class="nome">${esc(p.cliente||"")}</div>
+      <div class="end">${bloco("d",p) || "(endereço não preenchido no pedido)"}</div>
+      ${p.telefone?`<div class="end">Tel: ${esc(p.telefone)}</div>`:""}
+      ${p.doc?`<div class="end">CPF/CNPJ: ${esc(p.doc)}</div>`:""}
+    </div>
+    <p class="lbl">Remetente</p>
+    <div class="box rem">
+      <div class="nome">${esc(rem.nome||emp.nome||"")}</div>
+      <div class="end">${bloco("r",rem) || "(cadastre o remetente na aba Envio)"}</div>
+      ${rem.tel?`<div class="end">Tel: ${esc(rem.tel)}</div>`:""}
+    </div>
+    <div class="foot">
+      <b>Conteúdo:</b> ${esc(p.itens||"")}<br>
+      ${pkTxt?`<b>Pacote:</b> ${esc(pkTxt)}<br>`:""}
+      <b>Valor declarado:</b> ${brl(p.valor)} &nbsp;|&nbsp; Pedido de ${fmtData(p.data)}
+    </div>
+  </div>
+  <div class="btns">
+    <button onclick="window.print()">Imprimir</button>
+    <button onclick="window.close()">Fechar</button>
+  </div>
+  </body></html>`);
+  w.document.close();
+}
+
+function copiarEnvio(id){
+  const p = db.pedidos.find(x=>x.id===id); if(!p) return;
+  const pk = pacoteDoPedido(p);
+  const txt = [
+    ["Destinatário", p.cliente],
+    ["CPF/CNPJ", p.doc],
+    ["E-mail", p.email],
+    ["Telefone", p.telefone],
+    ["CEP", p.cep],
+    ["Endereço", p.rua],
+    ["Número", p.numero],
+    ["Complemento", p.compl],
+    ["Bairro", p.bairro],
+    ["Cidade/UF", [p.cidade, p.uf].filter(Boolean).join(" / ")],
+    ["Peso (kg)", pk.peso],
+    ["Comprimento (cm)", pk.comp],
+    ["Largura (cm)", pk.larg],
+    ["Altura (cm)", pk.alt],
+    ["Valor declarado (R$)", String(p.valor||0).replace(".", ",")],
+    ["Conteúdo", p.itens]
+  ].filter(([,v])=> v!=null && String(v).trim()!=="").map(([k,v])=> k+": "+v).join("\n");
+  const done = ()=> flashMsg("Dados do envio copiados — cole ao adicionar o envio no Melhor Envio.");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, ()=> prompt("Copie manualmente (Ctrl+C):", txt));
+  } else { prompt("Copie manualmente (Ctrl+C):", txt); }
+}
+
+function listaEnvio(){
+  const modo = $("#envFiltro").value;
+  let list = pedidosEmpresa().slice();
+  if(modo==="pendentes") list = list.filter(p=>p.status!=="entregue" && p.status!=="cancelado");
+  else if(modo==="comendereco") list = list.filter(temEndereco);
+  return list;
+}
+
+function renderEnvio(){
+  const list = listaEnvio().sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  const tb = $("#envTabela tbody");
+  $("#envVazio").hidden = list.length>0;
+  tb.innerHTML = list.map(p=>{
+    const pk = pacoteDoPedido(p);
+    const pkDim = (pk.comp&&pk.larg&&pk.alt) ? `${pk.comp}×${pk.larg}×${pk.alt}` : `<span class="muted">sem medidas</span>`;
+    const end = temEndereco(p)
+      ? `<span style="font-size:12px">${esc(enderecoLinha(p))}</span>`
+      : `<span class="tag s-cancelado">falta endereço</span>`;
+    return `<tr>
+      <td>${fmtData(p.data)}</td>
+      <td>${esc(p.cliente)}${(empresaAtual()==="__all__")?`<br><span class="pill">${esc(empresaNome(p.empresaId))}</span>`:""}</td>
+      <td style="max-width:300px">${end}</td>
+      <td style="font-size:12px">${pkDim}${pk.peso?`<br><span class="muted">${esc(pk.peso)} kg</span>`:""}</td>
+      <td class="right">${brl(p.valor)}</td>
+      <td><div class="row-actions">
+        <button class="btn ghost sm" data-eopen="${p.id}">Abrir</button>
+        <button class="btn ghost sm" data-eetiq="${p.id}">Etiqueta</button>
+        <button class="btn sm" data-ecopy="${p.id}">Copiar p/ Melhor Envio</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+  tb.querySelectorAll("[data-eopen]").forEach(b=>b.onclick=()=>{ document.querySelector('nav button[data-view="pedidos"]').click(); editarPedido(b.dataset.eopen); });
+  tb.querySelectorAll("[data-eetiq]").forEach(b=>b.onclick=()=>imprimirEtiqueta(b.dataset.eetiq));
+  tb.querySelectorAll("[data-ecopy]").forEach(b=>b.onclick=()=>copiarEnvio(b.dataset.ecopy));
+
+  $("#envCsvInfo").innerHTML = "Colunas do CSV: nome, documento, cep, endereco, numero, complemento, bairro, cidade, uf, telefone, email, peso_kg, comprimento_cm, largura_cm, altura_cm, valor, conteudo. " +
+    "Para importar direto no Melhor Envio, baixe o <b>modelo de planilha</b> no painel deles e me envie que eu ajusto as colunas.";
+}
+$("#envFiltro").addEventListener("change", renderEnvio);
+$("#envExportCsv").onclick = ()=>{
+  const list = listaEnvio().sort((a,b)=>(a.data||"").localeCompare(b.data||""));
+  const head = ["nome","documento","cep","endereco","numero","complemento","bairro","cidade","uf","telefone","email","peso_kg","comprimento_cm","largura_cm","altura_cm","valor","conteudo"];
+  const rows = [head];
+  list.forEach(p=>{
+    const pk = pacoteDoPedido(p);
+    rows.push([p.cliente,p.doc,p.cep,p.rua,p.numero,p.compl,p.bairro,p.cidade,p.uf,p.telefone,p.email,
+      String(pk.peso).replace(".",","),pk.comp,pk.larg,pk.alt,String(p.valor||0).replace(".",","),p.itens]);
+  });
+  const csv = rows.map(r=>r.map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `envios-${todayISO()}.csv`; a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---------- utils ---------- */
+function stat(k,v,cls){ return `<div class="stat"><div class="k">${k}</div><div class="v ${cls||""}">${v}</div></div>`; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmtData(iso){ if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
+function empresaNome(id){ const e=db.empresas.find(x=>x.id===id); return e?e.nome:"—"; }
+function backupInfo(){
+  $("#backupInfo").textContent =
+    `${db.pedidos.length} pedidos · ${db.lancamentos.length} lançamentos · ${db.empresas.length} empresa(s) guardados neste navegador.`;
+}
+
+function render(){
+  renderEmpresaSelect();
+  renderDashboard();
+  renderPedidos();
+  renderFinanceiro();
+  renderEnvio();
+  backupInfo();
+}
+
+/* ---------- Sincronização na nuvem (Firebase) ---------- */
+let _fbDoc = null, _pushT = null, _applyingRemote = false;
+const _clientId = Math.random().toString(36).slice(2);
+
+function setSync(state){
+  const b = $("#syncBadge"); if(!b) return;
+  b.className = "";
+  if(state==="ok"){ b.textContent = "☁ sincronizado"; b.classList.add("ok"); }
+  else if(state==="saving"){ b.textContent = "☁ salvando…"; }
+  else if(state==="warn"){ b.textContent = "⚠ sem conexão — salvo neste aparelho"; b.classList.add("warn"); }
+  else b.textContent = "somente neste aparelho";
+}
+
+function schedulePush(){
+  if(!_fbDoc || _applyingRemote) return;
+  setSync("saving");
+  clearTimeout(_pushT);
+  _pushT = setTimeout(()=>{
+    const payload = JSON.parse(JSON.stringify(db));
+    payload._meta = { at: Date.now(), by: _clientId };
+    _fbDoc.set(payload).then(()=> setSync("ok"), ()=> setSync("warn"));
+  }, 900);
+}
+
+function syncDisponivel(){
+  return window.FIREBASE_CONFIG && typeof firebase !== "undefined" && location.protocol !== "file:";
+}
+
+function startSync(){
+  if(!syncDisponivel()){ setSync(null); return; }
+  try{ firebase.initializeApp(window.FIREBASE_CONFIG); }
+  catch(e){ setSync(null); return; }
+  const auth = firebase.auth();
+  const fs = firebase.firestore();
+  fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+
+  $("#loginForm").onsubmit = e=>{
+    e.preventDefault();
+    $("#loginErro").hidden = true;
+    auth.signInWithEmailAndPassword($("#loginEmail").value.trim(), $("#loginSenha").value)
+      .catch(()=>{ $("#loginErro").textContent = "E-mail ou senha incorretos."; $("#loginErro").hidden = false; });
+  };
+  $("#btnSair").onclick = ()=> auth.signOut();
+  $("#loginPular").onclick = e=>{ e.preventDefault(); $("#loginGate").hidden = true; _fbDoc = null; setSync(null); };
+
+  $("#loginGate").hidden = false;
+  auth.onAuthStateChanged(user=>{
+    if(!user){
+      $("#loginGate").hidden = false;
+      $("#btnSair").hidden = true;
+      _fbDoc = null;
+      setSync(null);
+      return;
+    }
+    $("#loginGate").hidden = true;
+    $("#btnSair").hidden = false;
+    $("#loginSenha").value = "";
+    _fbDoc = fs.collection("appData").doc(window.SYNC_DOC_ID || "principal");
+    _fbDoc.onSnapshot(snap=>{
+      if(!snap.exists){ schedulePush(); return; }
+      const data = snap.data();
+      if(data._meta && data._meta.by === _clientId){ setSync("ok"); return; }
+      _applyingRemote = true;
+      try{
+        delete data._meta;
+        db = normalize(data);
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(db)); }catch(e){}
+        renderEmpresaSelect(); carregarRemetente(); carregarPacote(); render();
+      } finally { _applyingRemote = false; }
+      setSync("ok");
+    }, ()=> setSync("warn"));
+  });
+}
+
+/* ---------- init ---------- */
+pf.data.value = todayISO();
+lf.data.value = todayISO();
+renderEmpresaSelect();
+carregarRemetente();
+carregarPacote();
+render();
+startSync();
+})();
+</script>
+</body>
+</html>

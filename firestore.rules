@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Regras de segurança do banco (Firestore).
+// Cole isto em: Firebase Console > Firestore Database > aba "Regras" > Publicar.
+//
+// Esta versão libera leitura/escrita APENAS para os dois usuários (você e sua esposa).
+// Troque os dois UID pelos que aparecem em Authentication > Users depois de criar as contas.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /appData/{doc} {
+      allow read, write: if request.auth != null
+        && request.auth.uid in [
+             "COLE_AQUI_O_UID_DO_MARIDO",
+             "COLE_AQUI_O_UID_DA_ESPOSA"
+           ];
+    }
+
+    // Bloqueia todo o resto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// --------------------------------------------------------------------
+// Alternativa mais simples (menos segura): qualquer conta logada entra.
+// Só use se DESATIVAR a criação de novas contas no Console
+// (Authentication > Settings > User actions > desmarcar "Enable create").
+//
+//   match /appData/{doc} {
+//     allow read, write: if request.auth != null;
+//   }
+// --------------------------------------------------------------------
